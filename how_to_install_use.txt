@@ -1,0 +1,43 @@
+INSTALLATION:
+
+bash AnacondaXXX.sh
+
+FOR MASK_R_CNN (in ./Mask_RCNN):
+# nano ~/.bashrc
+echo ". ~/anaconda3/etc/profile.d/conda.sh" >> ~/.bashrc
+echo "conda activate" >> ~/.bashrc
+
+conda create --name shallow
+conda activate shallow
+pip install -r requirements.txt
+python setup.py install
+pip install git+https://github.com/waleedka/coco.git#subdirectory=PythonAPI
+
+## COCO dataset (OPTIONAL)
+For Python, run "make" under coco/PythonAPI
+conda install cython
+ln -s ~/workspace/coco_repo/coco/PythonAPI/pycocotools/ pycocotools
+
+MOVE coco.py into root of the repo
+
+
+FOR STEREO MATCHING (in ./monodepth):
+sh ./utils/get_model.sh model_kitti ./model/kitti
+sh ./utils/get_model.sh model_cityscapes ./model/cityscales
+python monodepth_simple.py --image_path ../images/000056_10l.png --checkpoint_path ~/workspace/mask_repo/monodepth/model/cityscales/model_cityscapes
+
+
+DATASET:
+KITTI data scene flow (stereo)
+
+USAGE:
+cd ./Mask_RCNN
+python demo1.py
+python test_mask.py
+
+
+
+
+
+
+
