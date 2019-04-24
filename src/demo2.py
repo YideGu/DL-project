@@ -5,6 +5,7 @@ import pickle
 from mpl_toolkits.mplot3d import Axes3D
 from boundingbox_helper import *
 from mask_rcnn_handler import *
+from monodepth_handler import *
 from calibration_handler import *
 import numpy as np
 import skimage.io
@@ -36,6 +37,8 @@ def handle_input():
 
 def main():
     img_name_list = handle_input()
+    
+    Monodepth_obj = MonodepthPredClass()
     MaskRCNN_obj = MaskPredictClass()
     Calibration_obj = CalibrationClass()
     for img_name in img_name_list:
@@ -44,10 +47,10 @@ def main():
         cur_gt_disparities = load_gt_disp_kitti(cur_gt_path)
 
         # predict disparity and mask
-        cur_maskrcnn_res = MaskRCNN_obj.predict(is_savep = False, is_show = False)
-        
+        # cur_maskrcnn_res = MaskRCNN_obj.predict(is_savep = False, is_show = False)
+        Monodepth_obj.predict()
         # load disparity and mask
-        # cur_maskrcnn_res = pickle.load( open(res_dir+img_name+'.p', "rb" ))
+        cur_maskrcnn_res = pickle.load( open(res_dir+img_name+'.p', "rb" ))
         cur_pred_disparities = [np.load(res_dir+img_name+'_disp.npy')]
 
         # print("image {}, roi {}, masks {}".format(cur_image.shape, r['rois'].shape, r['masks'].shape))
