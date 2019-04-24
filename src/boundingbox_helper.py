@@ -7,6 +7,7 @@ from mpl_toolkits.mplot3d import Axes3D
 
 
 def TwoD2ThreeD(P, coord, z):
+    # transform 2D points in the image to 3D points in the space
 	# input:    P: (3, 4) projection matrix
 	#           coord: 2D coordinate matrix (non-homo) of size (2, N)
 	#           z: array of z in 3D space of size (N,)
@@ -27,6 +28,7 @@ def TwoD2ThreeD(P, coord, z):
 
 
 def ThreeD2TwoD(P, coord):
+    # transform 3D points in the space to 2D points in the image
     # input:    P: (3, 4) projection matrix
     #           coord: 3D coordinate matrix (non-homo) of size (3, N)
     # output:   2D coordinate matrix (non-homo) of size (2, N)
@@ -46,8 +48,6 @@ def convertFromHomo(coord):
     return res
 
 
-
-
 def load_gt_disp_kitti(path):
     gt_disparities = []
     disp = cv2.imread(path, -1)
@@ -55,17 +55,10 @@ def load_gt_disp_kitti(path):
     gt_disparities.append(disp)
     return gt_disparities
 
-def convert_disps_to_depths_kitti(gt_disparities, pred_disparities):
+def convert_disps_to_depths_kitti(gt_disparities, pred_disparities, width_to_focal):
     gt_depths = []
     pred_depths = []
     pred_disparities_resized = []
-
-    # camera parameters (from: data_scene_flow/data_sense_flow_calib/training)
-    width_to_focal = dict()
-    width_to_focal[1242] = 721.5377
-    width_to_focal[1241] = 718.856
-    width_to_focal[1224] = 707.0493
-    width_to_focal[1238] = 718.3351
 
     
     for i in range(len(gt_disparities)):
@@ -166,6 +159,7 @@ def get_pcd_masked(masks, depth_data, P):
     return pcd_3D_list
 
 def boundingbox(pcd_3D):
+    # generate 3D bounding box
     xyz_max = np.max(pcd_3D, axis=1)
     xyz_min = np.min(pcd_3D, axis=1)
     x1, x2 = xyz_min[0],xyz_max[0]
@@ -179,7 +173,7 @@ def boundingbox(pcd_3D):
     return vertice3D, edge
 
 def get_boundingbox(pcd_3D_list, image, P):
-    # plot the boundingbox on 2D orginal image
+    # plot the bounding box back to 2D orginal image
     # input: pcd_3D_list a list of 3D coordinate of detected objects, with size of (3, N)
     #       image: origin 2D image
     #       P: transformation matrix of size (3, 4)
