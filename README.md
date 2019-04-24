@@ -18,7 +18,7 @@ The input left image file (eg. `000056_10.png`) should be put in `DL-project/ima
 The corresponding calibration file (eg. `000056.txt`) should be put in `DL-project/images/data/calibration`.
 Generate depth image estimation data (eg. `000056_10_disp.npy`) and depth image (eg. `000056_10_disp_pred.png`) in `DL-project/images/res`:
 ```
-python ./monodepth_simple.py --image_path images/data/left_img/000056_10.png --checkpoint_path ../model/monodepth_model/model_kitti
+python ./monodepth/monodepth_simple.py --image_path images/data/left_img/000056_10.png --checkpoint_path ../model/monodepth_model/model_kitti
 ```
 Generate bounding box:
 ```
