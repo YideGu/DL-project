@@ -24,8 +24,7 @@ MOVE coco.py into root of the repo
 FOR STEREO MATCHING (in ./monodepth):
 sh ./utils/get_model.sh model_kitti ./model/kitti
 sh ./utils/get_model.sh model_cityscapes ./model/cityscales
-python monodepth_simple.py --image_path ../images/000056_10l.png --checkpoint_path ./model/cityscales/model_cityscapes
-
+python monodepth_simple.py --image_path ../images/data/left_img/000056_10.png --checkpoint_path ../../model/monodepth_model/model_kitti
 
 DATASET:
 KITTI data scene flow (stereo)
