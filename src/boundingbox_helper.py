@@ -2,7 +2,7 @@ import numpy as np
 import cv2
 from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-
+from matplotlib import patches,  lines
 
 
 
@@ -22,8 +22,7 @@ def TwoD2ThreeD(P, coord, z):
 		temp = np.dot(np.linalg.inv(temp_P), TwoD_homo[:, i])
 		res[0, i] = temp[0]/temp[2]
 		res[1, i] = temp[1]/temp[2]
-
-	# print(res_homo)
+    
 	return res
 
 
@@ -55,6 +54,7 @@ def load_gt_disp_kitti(path):
     gt_disparities.append(disp)
     return gt_disparities
 
+
 def convert_disps_to_depths_kitti(gt_disparities, pred_disparities, width_to_focal):
     gt_depths = []
     pred_depths = []
@@ -72,12 +72,14 @@ def convert_disps_to_depths_kitti(gt_disparities, pred_disparities, width_to_foc
         # print(gt_disp)
         mask = gt_disp > 0
 
-        gt_depth = width_to_focal[width] * 0.54 / (gt_disp + (1.0 - mask))
+        # 0.54, 0.5707 width_to_focal[width]
+        gt_depth =  width_to_focal[width] *  0.54 / (gt_disp + (1.0 - mask))
         pred_depth = width_to_focal[width] * 0.54 / pred_disp
 
         gt_depths.append(gt_depth)
         pred_depths.append(pred_depth)
     return gt_depths, pred_depths, pred_disparities_resized
+
 
 
 
@@ -108,7 +110,7 @@ def plot_mask(image, masks):
     ax.imshow(trial_img.astype(np.uint8))
     plt.show()
 
-def get_pcd_masked(masks, depth_data, P):
+def get_pcd_masked(masks, depth_data, P, is_show = False, threshold = 500):
     # only plot 3D points from the object detected by Mask-RCNN
     # input:    mask: a list of output masks from MaskRCNN with size of (H,W,N)
     #           depth_data: depth information for the same image
@@ -119,52 +121,60 @@ def get_pcd_masked(masks, depth_data, P):
     pcd_3D_list = []
     for idx in range(masks.shape[2]):
         mask = masks[:,:,idx]
-        mask_pos = np.where((mask==1)*(depth_data < 200.0))
+        mask_pos = np.where((mask==1)*(depth_data < 200.0))  #
         # print("mask size = {}".format(mask_pos[0].shape))
-        pcd_2D = np.array([mask_pos[1], mask_pos[0]])
+        # print("filered size 1: {}".format(mask_pos[0].shape[0]))
+        if(mask_pos[0].shape[0] < threshold):
+            continue
+
         depth_masked = depth_data[mask_pos]
-        # print("After mask: xy: {}, z: {}".format(pcd_2D.shape, depth_masked.shape))
+
+        d_median = np.median(depth_masked)
+        inlier_idx = np.where((depth_masked - d_median > -1)*(depth_masked - d_median < 6))
+        # print("filered size 2: {}".format(inlier_idx[0].shape[0]))
+        if(inlier_idx[0].shape[0] < threshold):
+            continue
+        depth_masked = depth_masked[inlier_idx]
+
+
+        pcd_2D = np.array([mask_pos[1][inlier_idx], mask_pos[0][inlier_idx]])
+
         pcd_3D = TwoD2ThreeD(P, pcd_2D, depth_masked)
         pcd_3D_list.append(pcd_3D)
-        ax.scatter(pcd_3D[0, :], pcd_3D[1, :], pcd_3D[2, :], c='r', marker='.')
-        vertice3D, edge = boundingbox(pcd_3D)
-        for i in range(edge.shape[0]):
-            #line_plot = np.array([],[])
-            ax.plot([vertice3D[0, edge[i, 0]], vertice3D[0, edge[i, 1]]],
-                [vertice3D[1, edge[i, 0]], vertice3D[1, edge[i, 1]]],
-                [vertice3D[2, edge[i, 0]], vertice3D[2, edge[i, 1]]], 'b')
+        if(is_show):
+            ax.scatter(pcd_3D[0, :], pcd_3D[1, :], pcd_3D[2, :], c='r', marker='.')
+            vertice3D, edge = boundingbox(pcd_3D)
+            for i in range(edge.shape[0]):
+                #line_plot = np.array([],[])
+                ax.plot([vertice3D[0, edge[i, 0]], vertice3D[0, edge[i, 1]]],
+                    [vertice3D[1, edge[i, 0]], vertice3D[1, edge[i, 1]]],
+                    [vertice3D[2, edge[i, 0]], vertice3D[2, edge[i, 1]]], 'b')
+    print("{} mask, {} saved".format(masks.shape[2], len(pcd_3D_list)))
     
     
     
-
-    Xmax, Xmin, Ymax, Ymin, Zmax, Zmin = 10, -10, 10, 0, 60, 0
-    ax.plot([0, 0],[0, 0], [Zmax, 0])
-    ax.axes.set_xlim3d(left=-20, right=20)
-    ax.axes.set_ylim3d(bottom=-2, top=6) 
-    ax.axes.set_zlim3d(bottom=0, top=60) 
-    # # Create cubic bounding box to simulate equal aspect ratio
-    # max_range = np.array([Xmax-Xmin, Ymax-Ymin, Zmax-Zmin]).max()
-    # Xb = 0.5*max_range*np.mgrid[-1:2:2,-1:2:2,-1:2:2][0].flatten() + 0.5*(Xmax+Xmin)
-    # Yb = 0.5*max_range*np.mgrid[-1:2:2,-1:2:2,-1:2:2][1].flatten() + 0.5*(Ymax+Ymin)
-    # Zb = 0.5*max_range*np.mgrid[-1:2:2,-1:2:2,-1:2:2][2].flatten() + 0.5*(Zmax+Zmin)
-    # # Comment or uncomment following both lines to test the fake bounding box:
-    # for xb, yb, zb in zip(Xb, Yb, Zb):
-    #     ax.plot([xb], [yb], [zb], 'w')
-    ax.view_init(elev = -40, azim = -90)
-    ax.set_xlabel('x [m]')
-    ax.set_ylabel('y [m]')
-    ax.set_zlabel('z [m]')
-    plt.grid()
-    plt.show()
+    if(is_show):
+        Xmax, Xmin, Ymax, Ymin, Zmax, Zmin = 10, -10, 10, 0, 60, 0
+        ax.plot([0, 0],[0, 0], [Zmax, 0])
+        ax.axes.set_xlim3d(left=-20, right=20)
+        ax.axes.set_ylim3d(bottom=-2, top=6) 
+        ax.axes.set_zlim3d(bottom=0, top=60) 
+        
+        ax.view_init(elev = -40, azim = -90)
+        ax.set_xlabel('x [m]')
+        ax.set_ylabel('y [m]')
+        ax.set_zlabel('z [m]')
+        plt.grid()
+        plt.show()
     return pcd_3D_list
 
-def boundingbox(pcd_3D):
+def boundingbox(pcd_3D, z_offset = 0):
     # generate 3D bounding box
     xyz_max = np.max(pcd_3D, axis=1)
     xyz_min = np.min(pcd_3D, axis=1)
     x1, x2 = xyz_min[0],xyz_max[0]
     y1, y2 = xyz_min[1],xyz_max[1]
-    z1, z2 = xyz_min[2],xyz_max[2]
+    z1, z2 = xyz_min[2],xyz_max[2] + z_offset
     vertice3D = np.array([[x1, x1, x1, x1, x2, x2, x2, x2],
                         [y1, y1, y2, y2, y1, y1, y2, y2],
                         [z1, z2, z1, z2, z1, z2, z1, z2]])
@@ -172,7 +182,7 @@ def boundingbox(pcd_3D):
                         [2, 6],[3, 7], [5, 7],[4, 5],[6, 7],[4, 6] ])
     return vertice3D, edge
 
-def get_boundingbox(pcd_3D_list, image, P):
+def get_boundingbox(pcd_3D_list, image, P, res_dir, img_name, z_offset = 0):
     # plot the bounding box back to 2D orginal image
     # input: pcd_3D_list a list of 3D coordinate of detected objects, with size of (3, N)
     #       image: origin 2D image
@@ -182,13 +192,16 @@ def get_boundingbox(pcd_3D_list, image, P):
     ax1.imshow(image)
     for idx in range(len(pcd_3D_list)):
         pcd_3D = pcd_3D_list[idx]
-        vertice3D, edge = boundingbox(pcd_3D)
+        vertice3D, edge = boundingbox(pcd_3D, z_offset)
         vertice2D = ThreeD2TwoD(P, vertice3D)
         for i in range(edge.shape[0]):
             ax1.plot([vertice2D[0, edge[i, 0]], vertice2D[0, edge[i, 1]]],
                 [vertice2D[1, edge[i, 0]], vertice2D[1, edge[i, 1]]], 'r')
     
-    plt.show()
+    # plt.show()
+    ax1.axis('off')
+    plt.tight_layout()
+    plt.savefig(res_dir+img_name+'_box.png', bbox_inches='tight', pad_inches=0, dpi=199)    #
     
 
 ####################### NOT USED BELOW #######################
