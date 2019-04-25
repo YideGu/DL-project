@@ -58,7 +58,7 @@ def main():
         cur_pcd_3D_list = get_pcd_masked(cur_masks, pred_depths[0], cur_P_rect, False, 500)
         # cur_pcd_3D_list = get_pcd_masked(cur_masks, gt_depths[0], cur_P_rect)
 
-        get_boundingbox(cur_pcd_3D_list, cur_image, cur_P_rect, res_dir, img_name)  
+        get_boundingbox(cur_pcd_3D_list, cur_image, cur_P_rect, res_dir, img_name, z_offset = 0)  
 
 
 if __name__ == '__main__':

@@ -130,8 +130,7 @@ def get_pcd_masked(masks, depth_data, P, is_show = False, threshold = 500):
         depth_masked = depth_data[mask_pos]
 
         d_median = np.median(depth_masked)
-        d_std = np.std(depth_masked)
-        inlier_idx = np.where(np.abs(depth_masked - d_median) < 3)
+        inlier_idx = np.where((depth_masked - d_median > -1)*(depth_masked - d_median < 6))
         # print("filered size 2: {}".format(inlier_idx[0].shape[0]))
         if(inlier_idx[0].shape[0] < threshold):
             continue
@@ -140,7 +139,6 @@ def get_pcd_masked(masks, depth_data, P, is_show = False, threshold = 500):
 
         pcd_2D = np.array([mask_pos[1][inlier_idx], mask_pos[0][inlier_idx]])
 
-        # print("After mask: xy: {}, z: {}".format(pcd_2D.shape, depth_masked.shape))
         pcd_3D = TwoD2ThreeD(P, pcd_2D, depth_masked)
         pcd_3D_list.append(pcd_3D)
         if(is_show):
@@ -170,13 +168,13 @@ def get_pcd_masked(masks, depth_data, P, is_show = False, threshold = 500):
         plt.show()
     return pcd_3D_list
 
-def boundingbox(pcd_3D):
+def boundingbox(pcd_3D, z_offset = 0):
     # generate 3D bounding box
     xyz_max = np.max(pcd_3D, axis=1)
     xyz_min = np.min(pcd_3D, axis=1)
     x1, x2 = xyz_min[0],xyz_max[0]
     y1, y2 = xyz_min[1],xyz_max[1]
-    z1, z2 = xyz_min[2],xyz_max[2] + 2 
+    z1, z2 = xyz_min[2],xyz_max[2] + z_offset
     vertice3D = np.array([[x1, x1, x1, x1, x2, x2, x2, x2],
                         [y1, y1, y2, y2, y1, y1, y2, y2],
                         [z1, z2, z1, z2, z1, z2, z1, z2]])
@@ -184,7 +182,7 @@ def boundingbox(pcd_3D):
                         [2, 6],[3, 7], [5, 7],[4, 5],[6, 7],[4, 6] ])
     return vertice3D, edge
 
-def get_boundingbox(pcd_3D_list, image, P, res_dir, img_name):
+def get_boundingbox(pcd_3D_list, image, P, res_dir, img_name, z_offset = 0):
     # plot the bounding box back to 2D orginal image
     # input: pcd_3D_list a list of 3D coordinate of detected objects, with size of (3, N)
     #       image: origin 2D image
@@ -194,7 +192,7 @@ def get_boundingbox(pcd_3D_list, image, P, res_dir, img_name):
     ax1.imshow(image)
     for idx in range(len(pcd_3D_list)):
         pcd_3D = pcd_3D_list[idx]
-        vertice3D, edge = boundingbox(pcd_3D)
+        vertice3D, edge = boundingbox(pcd_3D, z_offset)
         vertice2D = ThreeD2TwoD(P, vertice3D)
         for i in range(edge.shape[0]):
             ax1.plot([vertice2D[0, edge[i, 0]], vertice2D[0, edge[i, 1]]],
