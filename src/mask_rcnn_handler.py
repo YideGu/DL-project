@@ -50,11 +50,23 @@ class MaskPredictClass:
         self.model.load_weights(COCO_MODEL_PATH, by_name=True)
 
         self.class_names = ['BG', 'person', 'bicycle', 'car', 'motorcycle', 'airplane',
-                    'bus', 'train', 'truck', 'traffic light', 'stop sign', 'parking meter']
+               'bus', 'train', 'truck', 'boat', 'traffic light',
+               'fire hydrant', 'stop sign', 'parking meter', 'bench', 'bird',
+               'cat', 'dog', 'horse', 'sheep', 'cow', 'elephant', 'bear',
+               'zebra', 'giraffe', 'backpack', 'umbrella', 'handbag', 'tie',
+               'suitcase', 'frisbee', 'skis', 'snowboard', 'sports ball',
+               'kite', 'baseball bat', 'baseball glove', 'skateboard',
+               'surfboard', 'tennis racket', 'bottle', 'wine glass', 'cup',
+               'fork', 'knife', 'spoon', 'bowl', 'banana', 'apple',
+               'sandwich', 'orange', 'broccoli', 'carrot', 'hot dog', 'pizza',
+               'donut', 'cake', 'chair', 'couch', 'potted plant', 'bed',
+               'dining table', 'toilet', 'tv', 'laptop', 'mouse', 'remote',
+               'keyboard', 'cell phone', 'microwave', 'oven', 'toaster',
+               'sink', 'refrigerator', 'book', 'clock', 'vase', 'scissors',
+               'teddy bear', 'hair drier', 'toothbrush']
 
-    def predict(self, is_savep = False, is_show = False, res_dir = '../images/res/'):
-        filename = '../images/data/left_img/000056_10.png'
-        print("predict image "+ filename)
+    def predict(self, filename = '../images/data/left_img/000056_10.png', is_savep = False, is_show = False, res_dir = '../images/res/'):
+        print("predict mask for {}".format(filename))
         image = skimage.io.imread(filename)
 
         # Run detection
@@ -62,6 +74,7 @@ class MaskPredictClass:
 
         # Visualize results
         r = results[0]
+
         if(is_savep):
             image_idx = (filename.split('.')[-2]).split('/')[-1]
             p_name = res_dir + image_idx + '.p'
@@ -75,7 +88,14 @@ class MaskPredictClass:
 
             visualize.display_instances(image, r['rois'], r['masks'], r['class_ids'], 
                                         self.class_names, r['scores'])
-        return r
+        
+        mask_result = []
+        for i in range(len(r['scores'])):
+            temp_type = self.class_names[r['class_ids'][i]]
+            if(temp_type == 'car' or temp_type == 'truck' or temp_type == 'bus'\
+                or temp_type == 'train'):
+                mask_result.append(r['masks'][:, :, i])
+        return np.stack(mask_result, axis = 2)
 
 
 

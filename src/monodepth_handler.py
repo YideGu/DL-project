@@ -66,6 +66,7 @@ class MonodepthPredClass:
         self.train_saver.restore(self.sess, restore_path)
 
     def predict(self, filename = '../images/data/left_img/000056_10.png', is_saven = False, res_dir = '../images/res/'):
+        print("predict depth for {}".format(filename))
         input_image = scipy.misc.imread(filename, mode="RGB")
         original_height, original_width, num_channels = input_image.shape
         input_image = scipy.misc.imresize(input_image, [self.input_height, self.input_width], interp='lanczos')
@@ -73,17 +74,17 @@ class MonodepthPredClass:
         input_images = np.stack((input_image, np.fliplr(input_image)), 0)
 
         # get result
-        # get result
         disp = self.sess.run(self.model.disp_left_est[0], feed_dict={self.left: input_images})
         disp_pp = self.post_process_disparity(disp.squeeze()).astype(np.float32)
 
         output_name = (filename.split('/')[-1]).split('.')[0]
-
-        np.save(res_dir+output_name+'_disp.npy', disp_pp)
+        if(is_saven):
+            np.save(res_dir+output_name+'_disp.npy', disp_pp)
         disp_to_img = scipy.misc.imresize(disp_pp.squeeze(), [original_height, original_width])
         plt.imsave(os.path.join(res_dir+output_name+'_disp.png'), disp_to_img, cmap='plasma')
 
         print('done!')
+        return disp_pp
     
     def post_process_disparity(self, disp):
         _, h, w = disp.shape
