@@ -55,30 +55,49 @@ def load_gt_disp_kitti(path):
     return gt_disparities
 
 
-def convert_disps_to_depths_kitti(gt_disparities, pred_disparities, width_to_focal):
-    gt_depths = []
-    pred_depths = []
-    pred_disparities_resized = []
+# def convert_disps_to_depths_kitti(gt_disparities, pred_disparities, width_to_focal):
+#     gt_depths = []
+#     pred_depths = []
+#     pred_disparities_resized = []
 
     
-    for i in range(len(gt_disparities)):
-        gt_disp = gt_disparities[i]
-        height, width = gt_disp.shape
+#     for i in range(len(gt_disparities)):
+#         gt_disp = gt_disparities[i]
+#         height, width = gt_disp.shape
 
-        pred_disp = pred_disparities[i]
-        pred_disp = width * cv2.resize(pred_disp, (width, height), interpolation=cv2.INTER_LINEAR)
+#         pred_disp = pred_disparities[i]
+#         pred_disp = width * cv2.resize(pred_disp, (width, height), interpolation=cv2.INTER_LINEAR)
 
-        pred_disparities_resized.append(pred_disp) 
-        # print(gt_disp)
-        mask = gt_disp > 0
+#         pred_disparities_resized.append(pred_disp) 
+#         # print(gt_disp)
+#         mask = gt_disp > 0
 
-        # 0.54, 0.5707 width_to_focal[width]
-        gt_depth =  width_to_focal[width] *  0.54 / (gt_disp + (1.0 - mask))
-        pred_depth = width_to_focal[width] * 0.54 / pred_disp
+#         # 0.54, 0.5707 width_to_focal[width]
+#         gt_depth =  width_to_focal[width] *  0.54 / (gt_disp + (1.0 - mask))
+#         pred_depth = width_to_focal[width] * 0.54 / pred_disp
 
-        gt_depths.append(gt_depth)
-        pred_depths.append(pred_depth)
-    return gt_depths, pred_depths, pred_disparities_resized
+#         gt_depths.append(gt_depth)
+#         pred_depths.append(pred_depth)
+#     return gt_depths, pred_depths, pred_disparities_resized
+
+
+def convert_disps_to_depths_kitti(disparities_list, width_to_focal, original_shape = (375, 1242), mode = 'pred'): 
+    depths_list = []
+    height, width = original_shape
+    for i in range(len(disparities_list)):
+        disp = disparities_list[i]
+        disp = width * cv2.resize(disp, (width, height), interpolation=cv2.INTER_LINEAR)
+
+        if(mode == 'pred'):
+            depth = width_to_focal[width] * 0.54 / disp
+        else:
+            # print(gt_disp)
+            mask = disp > 0
+            # 0.54, 0.5707 width_to_focal[width]
+            depth =  width_to_focal[width] *  0.54 / (disp + (1.0 - mask))
+            
+        depths_list.append(depth)
+    return depths_list
 
 
 

@@ -1,18 +1,18 @@
 #! /usr/bin/python3
-from glob import glob
+# from glob import glob
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 import numpy as np
 import os
 import cv2
-import pykitti
-from itertools import compress
+# import pykitti
+# from itertools import compress
 import pickle
 
 height = 375
 width = 1242
 
-path = 'data/output/kitti/test/180426/3'
+path = '../../data' # 'data/output/kitti/test/180426/3'
 
 import torch
 import torch.nn as nn
