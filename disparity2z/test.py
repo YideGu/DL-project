@@ -91,7 +91,7 @@ for frame in range(trainlen):
 	plt.show()
 	plt.close()
 
-np.save('data/output/kitti/test/180426/1/proj_cloud_point', projlist)
+np.save('../../model/d2z_processed_data/proj_cloud_point', projlist)
 """
 
 
@@ -195,7 +195,7 @@ if __name__ == '__main__':
 	height = 375
 	width = 1242
 
-	path = '../../data'
+	path = '../../model/d2z_processed_data'
 	# path = 'data/output/kitti/test/180426/3'
 	#basedir = glob('data/kitti/test/2011_09_26_drive_0014_sync/')
 	# dataset = pykitti.raw('data/kitti/test', '2011_09_26', '0009')

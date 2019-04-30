@@ -47,7 +47,8 @@ def main():
         if(mode_pred == 'complete'):
             # predict disparity and mask
             cur_masks= MaskRCNN_obj.predict(cur_image_name, is_savep = False, is_show = False)
-            cur_pred_disparities = [Monodepth_obj.predict(cur_image_name)]
+            # continue
+            cur_pred_disparities = [Monodepth_obj.predict(cur_image_name, res_dir = res_dir)]
         else:
             # load pre-calculated disparity and mask
             cur_masks = pickle.load( open(res_dir+img_name+'.p', "rb" ))
@@ -58,17 +59,15 @@ def main():
         # 
         if(mode_d2z == 'classical'):
             pred_depths = \
-                convert_disps_to_depths_kitti(cur_pred_disparities, Calibration_obj.width_to_focal, original_shape, mode = 'pred')  # shape (375,1242)
-            # gt_depths, pred_depths, pred_disparities_resized = \
-            #     convert_disps_to_depths_kitti(cur_gt_disparities, cur_pred_disparities, Calibration_obj.width_to_focal)  # shape (375,1242)
+                convert_disps_to_depths_kitti(cur_pred_disparities, Calibration_obj.width_to_focal, original_shape, 'pred', cur_image_name, res_dir)  # shape (375,1242)
         else:
             # load trained z directly:
             # pred_depths = [np.load(res_dir + img_name+'_simple.npy')]
-            pred_depths = D2Z_obj.predict(cur_pred_disparities, original_shape)
+            pred_depths = D2Z_obj.predict(cur_pred_disparities, original_shape, cur_image_name, res_dir)
             
 
         # print(cur_masks['rois']) #y1, x1, y2, x2 
-        cur_pcd_3D_list = get_pcd_masked(cur_masks, pred_depths[0], cur_P_rect, False, 500)
+        cur_pcd_3D_list = get_pcd_masked(cur_masks, pred_depths[0], cur_P_rect, True, 500, cur_image_name, res_dir)
         # cur_pcd_3D_list = get_pcd_masked(cur_masks, gt_depths[0], cur_P_rect)
 
         get_boundingbox(cur_pcd_3D_list, cur_image, cur_P_rect, res_dir, img_name, z_offset = 0)  
@@ -80,13 +79,15 @@ if __name__ == '__main__':
     #   python demo2.py all         # handle the default img (000056_10.png)  
     #   python demo2.py             # handle all images in left_dir
 
-    mode_d2z = 'classical'     # mode_d2z = 'classical' or 'nn'
+    mode_d2z = 'nn'    # mode_d2z = 'classical' or 'nn'
     mode_pred = 'complete'  # mode_pred = 'pre-processed' or 'complete'
     # TODO: dir name to be changed
     left_dir = '../images/data/left_img/'
     right_dir = '../images/data/right_img/'
     disp_dir = '../images/data/disp_img/'   # optional
     calibration_dir = '../images/data/calibration/'
-
-    res_dir = '../images/res/'
+    if mode_d2z == 'nn':
+        res_dir = '../images/res/nn/'
+    else:
+        res_dir = '../images/res/classical/'
     main()
