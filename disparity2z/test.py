@@ -1,26 +1,23 @@
 #! /usr/bin/python3
-from glob import glob
+# from glob import glob
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 import numpy as np
 import os
 import cv2
-import pykitti
-from itertools import compress
+# import pykitti
+# from itertools import compress
 import pickle
 
-height = 375
-width = 1242
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
+from simple import *
+import skimage.transform
 
-path = 'data/output/kitti/test/180426/3'
-#basedir = glob('data/kitti/test/2011_09_26_drive_0014_sync/')
-dataset = pykitti.raw('data/kitti/test', '2011_09_26', '0009')
-data_velo = list(dataset.velo)
-calib = dataset._load_calib_cam_to_cam('calib_velo_to_cam.txt', 'calib_cam_to_cam.txt')
-P = calib['P_rect_20']
-R = calib['R_rect_00']
-T = calib['T_cam2_velo']
-proj2 = P @ R @ T
+
+
 
 """
 projlist = np.zeros((trainlen, 256, 512)); projlist[:, :, :] = np.nan
@@ -97,47 +94,12 @@ for frame in range(trainlen):
 np.save('data/output/kitti/test/180426/1/proj_cloud_point', projlist)
 """
 
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
-import skimage.transform
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-trainlen = min(1000, len(data_velo))
-epoch = 50
-batchsize = min(10, trainlen)
-mode = 'train'
 
-projlist = np.load(os.path.join(path,'proj_cloud_point.npy'))[:trainlen]
-dispn = np.load(os.path.join(path,'disp.npy'))[:trainlen].reshape(trainlen, 256, 512, 1)
 
-print(dispn.shape)
-print(projlist.shape)
-
-class simple(nn.modules.Module):
-
-    def __init__(self):
-        super(simple, self).__init__()
-        self.fc = nn.Sequential(
-        	nn.Linear(1, 100),
-        	nn.Sigmoid(),
-        	nn.Linear(100, 1),
-        	nn.ReLU()
-        	)
-
-    def forward(self, x):
-    	return self.fc(x)
-
-torch.manual_seed(598)
-disp = torch.tensor(dispn, dtype=torch.float32).to(device)
-projlist = torch.tensor(projlist.reshape((trainlen, 256, 512, 1)), dtype=torch.float32).to(device)
-net_simple = simple().to(device)
-optimizer = optim.Adam(net_simple.parameters(), lr = 1)
-loss = []
-
-if mode == 'train':
+def train_model():
+	loss = []
 	for epochi in range(epoch):
 
 		running_loss = 0.0
@@ -165,6 +127,10 @@ if mode == 'train':
 	                      (epochi + 1, i + 1, running_loss / batchsize))
 
 	np.save(os.path.join(path, 'loss'), loss)
+	# save trained model      
+	torch.save(net_simple.state_dict(), MODEL_FILENAME)		
+
+def test_model():
 	out = []
 	for i in range(disp.shape[0]):
 		disp_to_depth = net_simple(disp[i,:,:,:]).reshape(256, 512)
@@ -184,8 +150,9 @@ if mode == 'train':
 		out.append(dpt)
 	np.save(os.path.join(path, 'depth'), np.array(out))
 
-else:
-	a = np.load(os.path.join(path, 'depth0.npy'))
+
+def visualize_result(pred_data):
+	a = np.load(os.path.join(path, pred_data))
 	dpt = projlist[0].to('cpu').numpy().reshape((256, 512))
 	
 	fig1 = plt.figure(1, figsize=(8, 16))
@@ -218,3 +185,52 @@ else:
 	ax3.axis('scaled')
 	plt.show()
 	plt.close()
+
+
+
+if __name__ == '__main__':
+	mode = 'train'
+
+	# load data:
+	height = 375
+	width = 1242
+
+	path = '../../data'
+	# path = 'data/output/kitti/test/180426/3'
+	#basedir = glob('data/kitti/test/2011_09_26_drive_0014_sync/')
+	# dataset = pykitti.raw('data/kitti/test', '2011_09_26', '0009')
+	# data_velo = list(dataset.velo)
+	# calib = dataset._load_calib_cam_to_cam('calib_velo_to_cam.txt', 'calib_cam_to_cam.txt')
+	# P = calib['P_rect_20']
+	# R = calib['R_rect_00']
+	# T = calib['T_cam2_velo']
+	# proj2 = P @ R @ T
+
+	trainlen = min(1000, 443)	# len(data_velo)
+	projlist = np.load(os.path.join(path,'proj_cloud_point.npy'))[:trainlen]
+	dispn = np.load(os.path.join(path,'disp.npy'))[:trainlen].reshape(trainlen, 256, 512, 1)
+
+
+	# initialize model:
+	device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+	
+	epoch = 50
+	batchsize = min(10, trainlen)
+	torch.manual_seed(598)
+
+	disp = torch.tensor(dispn, dtype=torch.float32).to(device)
+	projlist = torch.tensor(projlist.reshape((trainlen, 256, 512, 1)), dtype=torch.float32).to(device)
+
+	net_simple = simple().to(device)
+	optimizer = optim.Adam(net_simple.parameters(), lr = 1)
+	
+
+	MODEL_FILENAME = '../../model/d2z_model'+"trained_model_simple.pth"
+	if mode == 'train':
+		train_model()
+	else:
+		net_simple.load_state_dict(torch.load(MODEL_FILENAME))
+	
+	test_model()
+	pred_data = 'depth0.npy'
+	visualize_result(pred_data)

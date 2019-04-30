@@ -7,6 +7,7 @@ from boundingbox_helper import *
 from mask_rcnn_handler import *
 from monodepth_handler import *
 from calibration_handler import *
+from d2z_handler import *
 import numpy as np
 import skimage.io
 
@@ -34,26 +35,38 @@ def main():
     Monodepth_obj = MonodepthPredClass()
     MaskRCNN_obj = MaskPredictClass()
     Calibration_obj = CalibrationClass()
+    D2Z_obj = d2zClass()
     for img_name in img_name_list:
         cur_image = skimage.io.imread(left_dir+img_name+'.png')
         cur_image_name = left_dir+img_name+'.png'
-        cur_gt_path = disp_dir+img_name+'.png'
-        cur_gt_disparities = load_gt_disp_kitti(cur_gt_path)
+        # cur_gt_path = disp_dir+img_name+'.png'
+        # cur_gt_disparities = load_gt_disp_kitti(cur_gt_path)
+        original_shape = [cur_image.shape[0], cur_image.shape[1]]
+        # print(original_shape)   # 375, 1242
 
-        # predict disparity and mask
-        cur_masks= MaskRCNN_obj.predict(cur_image_name, is_savep = False, is_show = False)
-        cur_pred_disparities = [Monodepth_obj.predict(cur_image_name)]
-        
-        # load disparity and mask
-        # cur_masks = pickle.load( open(res_dir+img_name+'.p', "rb" ))
-        # cur_pred_disparities = [np.load(res_dir+img_name+'_disp.npy')]
+        if(mode_pred == 'complete'):
+            # predict disparity and mask
+            cur_masks= MaskRCNN_obj.predict(cur_image_name, is_savep = False, is_show = False)
+            cur_pred_disparities = [Monodepth_obj.predict(cur_image_name)]
+        else:
+            # load pre-calculated disparity and mask
+            cur_masks = pickle.load( open(res_dir+img_name+'.p', "rb" ))
+            cur_pred_disparities = [np.load(res_dir+img_name+'_disp.npy')]
 
         
         cur_P_rect = Calibration_obj.getP(img_name)
+        # 
+        if(mode_d2z == 'classical'):
+            pred_depths = \
+                convert_disps_to_depths_kitti(cur_pred_disparities, Calibration_obj.width_to_focal, original_shape, mode = 'pred')  # shape (375,1242)
+            # gt_depths, pred_depths, pred_disparities_resized = \
+            #     convert_disps_to_depths_kitti(cur_gt_disparities, cur_pred_disparities, Calibration_obj.width_to_focal)  # shape (375,1242)
+        else:
+            # load trained z directly:
+            # pred_depths = [np.load(res_dir + img_name+'_simple.npy')]
+            pred_depths = D2Z_obj.predict(cur_pred_disparities, original_shape)
+            
 
-        gt_depths, pred_depths, pred_disparities_resized = \
-            convert_disps_to_depths_kitti(cur_gt_disparities, cur_pred_disparities, Calibration_obj.width_to_focal)  # shape (375,1242)
-        
         # print(cur_masks['rois']) #y1, x1, y2, x2 
         cur_pcd_3D_list = get_pcd_masked(cur_masks, pred_depths[0], cur_P_rect, False, 500)
         # cur_pcd_3D_list = get_pcd_masked(cur_masks, gt_depths[0], cur_P_rect)
@@ -67,10 +80,13 @@ if __name__ == '__main__':
     #   python demo2.py all         # handle the default img (000056_10.png)  
     #   python demo2.py             # handle all images in left_dir
 
+    mode_d2z = 'classical'     # mode_d2z = 'classical' or 'nn'
+    mode_pred = 'complete'  # mode_pred = 'pre-processed' or 'complete'
     # TODO: dir name to be changed
     left_dir = '../images/data/left_img/'
     right_dir = '../images/data/right_img/'
-    disp_dir = '../images/data/disp_img/'
+    disp_dir = '../images/data/disp_img/'   # optional
     calibration_dir = '../images/data/calibration/'
+
     res_dir = '../images/res/'
     main()
