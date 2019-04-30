@@ -1,6 +1,12 @@
 # DL-project
 Course 598 deep learning project
 
+# Reference:
+The stable monocular depth esimation code (in `.\monodepth\`) is from [`https://github.com/mrharicot/monodepth.git`
+](https://github.com/mrharicot/monodepth.git), which was finally used for bounding box prediction. Our OWN implementation for 
+monocular depth esimation is in (in `.\monodepth2\`)  
+The Mask-RCNN code (in `.\Mask_RCNN\`) is from [`https://github.com/matterport/Mask_RCNN.git`](https://github.com/matterport/Mask_RCNN.git), and fine-tuned on KITTI by us.
+
 # Installation:
 ```
 git clone https://github.com/WeilinXu/DL-project.git
