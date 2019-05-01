@@ -2,8 +2,9 @@
 Course 598 deep learning project
 
 # Reference:
-The stable monocular depth esimation code (in `.\monodepth\`) is adpated from [`https://github.com/mrharicot/monodepth.git`
-](https://github.com/mrharicot/monodepth.git), which was finally used for bounding box prediction.
+The stable monocular depth esimation code (in `.\monodepth\torch`) is adpated from [`https://github.com/ClubAI/MonoDepth-PyTorch.git`
+], which is based on [`https://github.com/mrharicot/monodepth.git`
+](https://github.com/mrharicot/monodepth.git), and was finally used for bounding box prediction.
 The Mask-RCNN code (in `.\Mask_RCNN\`) is from [`https://github.com/matterport/Mask_RCNN.git`](https://github.com/matterport/Mask_RCNN.git), and fine-tuned on KITTI by us.
 
 # Installation:
