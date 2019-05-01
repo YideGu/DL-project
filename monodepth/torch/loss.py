@@ -89,7 +89,7 @@ class MonodepthLoss(nn.modules.Module):
 
         weights_x = [torch.exp(-torch.mean(torch.abs(g), 1,
                      keepdim=True)) for g in image_gradients_x]
-        weights_y = [torch.exp(-torch.mean(torch.abs(g), 1,
+        weights_y = [torch.exp(-torch.mean(torch.abs(g), 0,
                      keepdim=True)) for g in image_gradients_y]
 
         smoothness_x = [disp_gradients_x[i] * weights_x[i]
@@ -147,10 +147,16 @@ class MonodepthLoss(nn.modules.Module):
                             for i in range(self.n)]
         image_loss = sum(image_loss_left + image_loss_right)
 
-        lr_left_loss = [torch.mean(torch.abs(right_left_disp[i]
+        lr_left_loss = 0.5 * [torch.mean(torch.abs(right_left_disp[i]
                         - disp_left_est[i])) for i in range(self.n)]
-        lr_right_loss = [torch.mean(torch.abs(left_right_disp[i]
+        lr_right_loss = 05 * [torch.mean(torch.abs(left_right_disp[i]
                          - disp_right_est[i])) for i in range(self.n)]
+
+        lr_left_loss += 0.5 * [torch.mean(self.SSIM(right_left_disp[i],
+                     disp_left_est[i])) for i in range(self.n)]
+        lr_right_loss += 0.5 * [torch.mean(self.SSIM(left_right_disp[i],
+                     disp_right_est[i])) for i in range(self.n)]
+
         lr_loss = sum(lr_left_loss + lr_right_loss)
 
         disp_left_loss = [torch.mean(torch.abs(
