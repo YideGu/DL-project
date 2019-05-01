@@ -133,7 +133,7 @@ class Model:
             self.loss_function = MonodepthLoss(
                 n=4,
                 SSIM_w=0.8,
-                disp_gradient_w=0.1, lr_w=1).to(self.device)
+                disp_gradient_w=0.5, lr_w=1).to(self.device)
             self.optimizer = optim.Adam(self.model.parameters(),
                                         lr=args.learning_rate)
             self.val_n_img, self.val_loader = prepare_dataloader(args.val_data_dir, args.mode,
