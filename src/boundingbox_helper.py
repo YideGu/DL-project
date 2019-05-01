@@ -3,6 +3,7 @@ import cv2
 from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import patches,  lines
+import os
 
 
 
@@ -55,33 +56,8 @@ def load_gt_disp_kitti(path):
     return gt_disparities
 
 
-# def convert_disps_to_depths_kitti(gt_disparities, pred_disparities, width_to_focal):
-#     gt_depths = []
-#     pred_depths = []
-#     pred_disparities_resized = []
 
-    
-#     for i in range(len(gt_disparities)):
-#         gt_disp = gt_disparities[i]
-#         height, width = gt_disp.shape
-
-#         pred_disp = pred_disparities[i]
-#         pred_disp = width * cv2.resize(pred_disp, (width, height), interpolation=cv2.INTER_LINEAR)
-
-#         pred_disparities_resized.append(pred_disp) 
-#         # print(gt_disp)
-#         mask = gt_disp > 0
-
-#         # 0.54, 0.5707 width_to_focal[width]
-#         gt_depth =  width_to_focal[width] *  0.54 / (gt_disp + (1.0 - mask))
-#         pred_depth = width_to_focal[width] * 0.54 / pred_disp
-
-#         gt_depths.append(gt_depth)
-#         pred_depths.append(pred_depth)
-#     return gt_depths, pred_depths, pred_disparities_resized
-
-
-def convert_disps_to_depths_kitti(disparities_list, width_to_focal, original_shape = (375, 1242), mode = 'pred'): 
+def convert_disps_to_depths_kitti(disparities_list, width_to_focal, original_shape = (375, 1242), mode = 'pred', filename = '../images/data/left_img/000056_10.png', res_dir = '../images/res/'): 
     depths_list = []
     height, width = original_shape
     for i in range(len(disparities_list)):
@@ -95,7 +71,9 @@ def convert_disps_to_depths_kitti(disparities_list, width_to_focal, original_sha
             mask = disp > 0
             # 0.54, 0.5707 width_to_focal[width]
             depth =  width_to_focal[width] *  0.54 / (disp + (1.0 - mask))
-            
+
+        output_name = (filename.split('/')[-1]).split('.')[0]
+        plt.imsave(os.path.join(res_dir+output_name+'_depth_cal.png'), depth, cmap='plasma')
         depths_list.append(depth)
     return depths_list
 
@@ -129,7 +107,7 @@ def plot_mask(image, masks):
     ax.imshow(trial_img.astype(np.uint8))
     plt.show()
 
-def get_pcd_masked(masks, depth_data, P, is_show = False, threshold = 500):
+def get_pcd_masked(masks, depth_data, P, is_show = False, threshold = 500, filename = '../images/data/left_img/000056_10.png', res_dir = '../images/res/'):
     # only plot 3D points from the object detected by Mask-RCNN
     # input:    mask: a list of output masks from MaskRCNN with size of (H,W,N)
     #           depth_data: depth information for the same image
@@ -162,12 +140,14 @@ def get_pcd_masked(masks, depth_data, P, is_show = False, threshold = 500):
         pcd_3D_list.append(pcd_3D)
         if(is_show):
             ax.scatter(pcd_3D[0, :], pcd_3D[1, :], pcd_3D[2, :], c='r', marker='.')
+            
             vertice3D, edge = boundingbox(pcd_3D)
             for i in range(edge.shape[0]):
                 #line_plot = np.array([],[])
                 ax.plot([vertice3D[0, edge[i, 0]], vertice3D[0, edge[i, 1]]],
                     [vertice3D[1, edge[i, 0]], vertice3D[1, edge[i, 1]]],
                     [vertice3D[2, edge[i, 0]], vertice3D[2, edge[i, 1]]], 'b')
+            
     print("{} mask, {} saved".format(masks.shape[2], len(pcd_3D_list)))
     
     
@@ -184,7 +164,9 @@ def get_pcd_masked(masks, depth_data, P, is_show = False, threshold = 500):
         ax.set_ylabel('y [m]')
         ax.set_zlabel('z [m]')
         plt.grid()
-        plt.show()
+        output_name = (filename.split('/')[-1]).split('.')[0]
+        fig.savefig(res_dir+output_name+'_pcd.png')
+        # plt.show()
     return pcd_3D_list
 
 def boundingbox(pcd_3D, z_offset = 0):

@@ -25,7 +25,7 @@ class d2zClass:
         self.net = simplecnn().to(self.device)
         self.net.load_state_dict(torch.load(MODEL_FILENAME))
 
-    def predict(self, disp_map_list, original_shape = (375, 1242)):
+    def predict(self, disp_map_list, original_shape = (375, 1242), filename = '../images/data/left_img/000056_10.png', res_dir = '../images/res/'):
         dpt_list = []
         for disp_map in  disp_map_list:
             disp_map = torch.tensor(disp_map, dtype=torch.float32).to(self.device)
@@ -35,7 +35,10 @@ class d2zClass:
             dpt = disp_to_depth.to('cpu').detach().numpy()
             k = np.max(np.abs(dpt))
             dpt = dpt / k
-            dpt = cv2.resize(dpt, (original_shape[0], original_shape[1]))
+            dpt = cv2.resize(dpt, (original_shape[1], original_shape[0]))
             dpt = dpt * k
             dpt_list.append(dpt)
+            output_name = (filename.split('/')[-1]).split('.')[0]
+            plt.imsave(os.path.join(res_dir+output_name+'_depth_cnn.png'), dpt, cmap='plasma')
+
         return dpt_list

@@ -25,8 +25,8 @@ import coco
 # Directory to save logs and trained model
 MODEL_DIR = os.path.join(ROOT_DIR, "logs")
 
-# Local path to trained weights file
-COCO_MODEL_PATH = ROOT_DIR+"../model/maskrcnn_model/mask_rcnn_coco.h5"
+# Local path to trained weights file from KITTI fine-tuned result
+COCO_MODEL_PATH = ROOT_DIR+"../model/maskrcnn_model/mask_rcnn_kitti.h5"
 # Download COCO trained weights from Releases if needed
 if not os.path.exists(COCO_MODEL_PATH):
     utils.download_trained_weights(COCO_MODEL_PATH)

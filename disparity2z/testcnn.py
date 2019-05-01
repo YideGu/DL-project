@@ -110,7 +110,7 @@ if __name__ == '__main__':
 	height = 375
 	width = 1242
 
-	path = '../../data'
+	path = '../../model/d2z_processed_data'
 	# ground truth depth (from point cloud)
 	trainlen = min(1000, 443)
 	

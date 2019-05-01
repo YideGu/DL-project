@@ -1,6 +1,11 @@
 # DL-project
 Course 598 deep learning project
 
+# Reference:
+The stable monocular depth esimation code (in `.\monodepth\`) is adpated from [`https://github.com/mrharicot/monodepth.git`
+](https://github.com/mrharicot/monodepth.git), which was finally used for bounding box prediction.
+The Mask-RCNN code (in `.\Mask_RCNN\`) is from [`https://github.com/matterport/Mask_RCNN.git`](https://github.com/matterport/Mask_RCNN.git), and fine-tuned on KITTI by us.
+
 # Installation:
 ```
 git clone https://github.com/WeilinXu/DL-project.git
@@ -10,8 +15,8 @@ Add pre-trained model for monodepth:
 ```
 sh ./monodepth/utils/get_model.sh model_kitti ../model/monodepth_model
 ```
-Add pre-trained model for Mask-RCNN:
-Download `mask_rcnn_coco.h5` to `../model/maskecnn_model/` from the [releases page](https://github.com/matterport/Mask_RCNN/releases).
+Add pre-trained and KITTI fine-tuned model for Mask-RCNN:
+Download `mask_rcnn_kitti.h5` to `../model/maskecnn_model/` from the [here](https://drive.google.com/open?id=1UkoT9OIhFDIL3AoMr5qdpBMeXoNGcy3i).
 
 Add pre-trained model for disparityToDepth network:
 Download `trained_model_cnn.pth` to `../model/d2z_model/` from [here](https://drive.google.com/open?id=1Q96jg1m1AYChdF6OBT1pm3HMIE8kl_vI)
